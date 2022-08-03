@@ -3,6 +3,7 @@ load "file_read.rb"
 def parse_file(file)
   airline_prefix = ""
   dim_idx = ""
+  @dest = ""
   if File.exist?("#{PATH}/#{file}")
     main_arr = fileRead(file).each_with_index do |line, i|
       if i == 0
@@ -13,13 +14,18 @@ def parse_file(file)
         point_of_unloading(line)
       elsif i == 3
         airline_prefix = line[0..2]
+        consingment_details(line, @dest)
+      elsif line.start_with?("/")
+        @dest = destination_airport = line.delete_prefix("/")
+
+        puts "Destination: #{destination_airport}"
       elsif line.start_with?("DIM")
         dim_idx = i
         dim_data(line)
       elsif line.start_with?("ULD")
         uld_idx = i
       elsif line.start_with?(airline_prefix)
-        consingment_details(line)
+        consingment_details(line, @dest)
       end
     end
   else
@@ -45,7 +51,8 @@ def flight_id(line)
 end
 
 def point_of_unloading(line)
-  puts "Point of Unloading: #{line[0..2]}"
+  @dest = line[0..2]
+  puts "Point of Unloading: #{@dest}"
 end
 
 def dim_data(line)
@@ -57,7 +64,7 @@ def dim_data(line)
   puts "Pieces: #{arr[3]}"
 end
 
-def consingment_details(line)
+def consingment_details(line, dest)
   arr = line[4..].split("/")
   arr_data = arr[1][1..].split(".")
   arr_symb = arr_data[0].split(/[0-9]/)
@@ -65,6 +72,7 @@ def consingment_details(line)
   puts "AWB sserial: #{arr[0][0..7]} /
         Airport 1: #{arr[0][8..10]} /
         Airport 2: #{arr[0][11..13]} /
+        Dest: #{dest}
         Shipment description: #{arr[1][0]} /
         number of pieces: #{arr_dig[0]}
         weight: #{arr_dig[1]}
